@@ -1,0 +1,23 @@
+:root {
+    --color-btn-border: black;
+    --color-btn-background: hsl(var(--color-base-hue),100%,83%);
+    --color-btn-text: hsl(var(--color-base-hue),100%,20%);
+}
+
+.btn {
+    border: 1px solid var(--color-btn-border);
+    border-radius: 0.5rem;
+    padding: 0.5rem 1rem;
+    font-size: 1.2rem;
+    font-family: 'Rubik';
+    cursor: pointer;
+    text-decoration: none;
+    text-align: center;
+    color: var(--color-btn-text);
+    background-color: var(--color-btn-background);
+}
+
+.btn-row {
+    display: flex;
+    align-items: flex-start;
+}

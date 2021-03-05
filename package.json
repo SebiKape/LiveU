@@ -1,0 +1,22 @@
+{
+  "name": "s",
+  "version": "1.0.0",
+  "description": "Get some information from user and returns a calculated animal, color and Country",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "devStart": "nodemon index.js"
+  },
+  "author": "Sebastian Kapelius",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^0.21.1",
+    "ejs": "^3.1.6",
+    "express": "^4.17.1",
+    "tedious": "^1.14.0",
+    "tedious-promises": "^0.4.1"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.7"
+  }
+}

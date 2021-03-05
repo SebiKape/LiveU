@@ -1,0 +1,33 @@
+@import 'form.css';
+@import 'button.css';
+
+:root{
+    font-family:Verdana;
+    font-size: 20px;
+    
+    --color-base-hue: 25;
+    --color-background-dark: hsl(var(--color-base-hue), 100%, 8%);
+    --color-background-light: hsl(var(--color-base-hue), 100%, 20%);
+    --color-text-light: hsl(var(--color-base-hue), 65%, 87%);
+
+    color: var(--color-text-light);
+}
+
+body {
+    background: linear-gradient(to right, var(--color-background-dark), var(--color-background-light)) ;
+}
+
+.container {
+    max-width: 1200px;
+    margin: auto;
+    margin-bottom: 3rem;
+}
+
+.inner-container {
+    margin: 0 3rem;
+}
+
+.page-header {
+    font-size: 2rem;
+    font-weight: 500;
+}
