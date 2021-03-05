@@ -30,18 +30,18 @@ try {
     console.error(error)
 }
 
-async function select_from_db(){
-    sqlString = "SELECT email FROM tbs_email WHERE id = @id"
+// async function select_from_db(){
+//     sqlString = "SELECT email FROM tbs_email WHERE id = @id"
     
-    result = await execute_query(sqlString)
-    console.log(result)
-}
+//     result = await execute_query(sqlString)
+//     console.log(result)
+// }
 
-try {
-    select_from_db()
-} catch (error) {
-    console.log(error)
-}
+// try {
+//     select_from_db()
+// } catch (error) {
+//     console.log(error)
+// }
 
 app.get('/', (req,res) => {
     res.render('formulario')
@@ -63,8 +63,8 @@ app.post('/', async (req,res) => {
         Api_res_string = Api_res.data.split("#")
         
         output_ids = await insertIntoDB(Api_res_string, nome, sobrenome, email)
-        check_data(output_ids, nome, sobrenome, email)
-
+        console.log(output_ids)
+        check = await check_data(output_ids, nome, sobrenome, email) 
 
         res.redirect('/')
     } catch (error) {
@@ -72,18 +72,6 @@ app.post('/', async (req,res) => {
         res.redirect('/')
     }
 })
-
-async function execute_query(sqlString) {
-    try {
-        results = await tp.sql(sqlString)
-            .parameter('id', TYPES.Int, 1648)
-            .execute()
-        return results
-    } catch (error) {
-        console.error(error)
-        return "error"
-    }
-}
 
 async function insertIntoDB(Api_res_string, nome, sobrenome, email){
     try {
@@ -93,20 +81,29 @@ async function insertIntoDB(Api_res_string, nome, sobrenome, email){
         // Insert nome, nome_cod into table tbs_nome
         sqlString = `INSERT INTO tbs_nome (nome, cod)
             OUTPUT INSERTED.id
-            VALUES ('${nome}',${nome_cod})`
-        nome_cod_id = await execute_query(sqlString)
+            VALUES (@nome,@nome_cod)`
+        nome_cod_id = await tp.sql(sqlString)
+                        .parameter('nome', TYPES.VarChar, nome)
+                        .parameter('nome_cod', TYPES.BigInt, nome_cod)
+                        .execute()
 
         // Insert sobrenome, sobrenome_cod into table tbs_sobrenome
         sqlString = `INSERT INTO tbs_sobrenome (sobrenome, cod)
             OUTPUT INSERTED.id
-            VALUES ('${sobrenome}',${sobrenome_cod})`
-        sobrenome_cod_id = await execute_query(sqlString)
+            VALUES (@sobrenome,@sobrenome_cod)`
+        sobrenome_cod_id = await tp.sql(sqlString)
+                            .parameter('sobrenome', TYPES.VarChar, sobrenome)
+                            .parameter('sobrenome_cod', TYPES.BigInt, sobrenome_cod)
+                            .execute()
 
         //Insert email, email_cod into table tbs_email
         sqlString = `INSERT INTO tbs_email (email, cod)
             OUTPUT INSERTED.id
-            VALUES ('${email}',${email_cod})`
-        email_cod_id = await execute_query(sqlString)
+            VALUES (@email,@email_cod)`
+        email_cod_id = await tp.sql(sqlString)
+                        .parameter('email', TYPES.VarChar, email)
+                        .parameter('email_cod', TYPES.BigInt, email_cod)
+                        .execute()
 
         return {
             nome_cod_id,
@@ -117,6 +114,38 @@ async function insertIntoDB(Api_res_string, nome, sobrenome, email){
     } catch (error) {
         console.error(error)
     }
+}
+
+async function check_data(output_ids, nome, sobrenome, email) {
+    var check = false
+    //verifica se foi realmente foram adicionados os dados no banco
+    nome_cod_id = output_ids.nome_cod_id[0].id
+    sobrenome_cod_id = output_ids.sobrenome_cod_id[0].id
+    email_cod_id = output_ids.email_cod_id[0].id
+    //Verifica table tbs_nome
+    sqlString = "SELECT nome, cod from tbs_nome WHERE id = @id"
+    queryResult = await tp.sql(sqlString)
+                    .parameter('id', TYPES.Int, nome_cod_id)
+                    .execute()
+    if ( queryResult[0].nome != null) {
+        if (queryResult[0].nome === nome) {
+            check = true
+        }
+    }else {
+        check = false
+    }
+    return check
+     
+    //Verifica table tbs_sobrenome
+    sqlString = "SELECT sobrenome, cod from tbs_sobrenome WHERE id = @id"
+    queryResult = await tp.sql(sqlString)
+                    .parameter('id', TYPES.Int, sobrenome_cod_id)
+                    .execute()
+    //Verifica table email
+    sqlString = "SELECT email, cod from tbs_email WHERE id = @id"
+    queryResult = await tp.sql(sqlString)
+                    .parameter('id', TYPES.Int, email_cod_id)
+                    .execute()
 }
 
 app.listen(process.env.PORT || 4000)
