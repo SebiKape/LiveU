@@ -126,6 +126,7 @@ async function select_code_and_sum(Api_res_string) {
                  AND s.cod = @sobrenome_cod
                  AND e.cod = @email_cod
                  `
+
     const timer = () => {
         return new Promise(res => {
             setTimeout(() => {
@@ -133,7 +134,7 @@ async function select_code_and_sum(Api_res_string) {
             }, 100);
         });
     }
-    // will loop until gets a result or timiout after 15 attempts (1,5 secs)
+    // will loop until gets a result or timeout after 15 attempts (1,5 secs)
     let i = 15
     while ((queryResult == null || queryResult[0] == null ) && i > 0) {
         queryResult = await tp.sql(sqlString)
@@ -159,8 +160,9 @@ async function get_animal_color_country(soma){
     sqlString = `SELECT a.animal, c.cor, p.pais FROM (SELECT * FROM tbs_animais WHERE total = @total) a
                  INNER JOIN tbs_cores c ON c.total = a.total
                  INNER JOIN tbs_paises p ON p.total = a.total
-                 WHERE c.cor NOT IN (SELECT cor FROM tbs_cores_excluidas WHERE total = @total)
-    `
+                 LEFT JOIN tbs_cores_excluidas cex ON cex.cor = c.cor
+                 WHERE cex.id IS NULL`
+
     queryResult = await tp.sql(sqlString)
                     .parameter('total', TYPES.BigInt, soma)
                     .execute()
