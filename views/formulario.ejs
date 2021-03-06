@@ -10,19 +10,11 @@
     <div class="container">
     <h2 class="page-header">Bem vindo</h2>
         <div class="inner-container">
-            <form action="/" method = "POST">
-                <div class="form-row form-item">
-                    <label>Nome</label>
-                    <input type="text" name="nome">
-                    <label>Sobrenome</label>
-                    <input type="text" name="sobrenome">
-                    <label>E-mail</label>
-                    <input type="text" name="email">
-                </div>
-                <div class="form-row form-end">
-                    <button class="btn" type = "submit"> Calcular</button>
-                </div>
-            </form>
+                <% if (locals.result  != null) { %> 
+                    <%- include('./_result', { result }) %>
+                    <% } else { %> 
+                    <%- include('./_form_fields') %>
+                <% } %> 
         </div>
     </div>
 </body>

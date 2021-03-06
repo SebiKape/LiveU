@@ -1,5 +1,6 @@
 :root {    
     --form-label-font-size: 1.2rem;
+    --form-special-label-font-size: 2rem;
     --form-input-border-color: hsl(var(--color-base-hue), 100%, 50%);
     --form-input-background-color: hsl(var(--color-base-hue), 70%, 40%);
 }
@@ -31,6 +32,13 @@
     margin-left: .3rem;
 }
 
+.form_item_special_label {
+    font-size: var(--form-special-label-font-size);
+    border: 1px solid var(--form-input-border-color);
+    background-color: var(--form-input-background-color);
+    text-align: center;
+}
+
 .form-item input {
     height: 2rem;
     padding: 0.25rem .5rem;
@@ -40,6 +48,6 @@
     color: var(--color-text-light );
     font-size: 1rem;
     font-weight: normal;
-    font-family: 'Rubik';
+    font-family: 'Verdana';
     outline: none;
 }

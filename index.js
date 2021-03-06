@@ -30,30 +30,20 @@ try {
     console.error(error)
 }
 
-// async function select_from_db(){
-//     sqlString = "SELECT email FROM tbs_email WHERE id = @id"
-    
-//     result = await execute_query(sqlString)
-//     console.log(result)
-// }
-
-// try {
-//     select_from_db()
-// } catch (error) {
-//     console.log(error)
-// }
-
 app.get('/', (req,res) => {
     res.render('formulario')
 })
 
 app.post('/', async (req,res) => {
     try {
+        //get data from request
         nome = req.body.nome
         sobrenome = req.body.sobrenome
         email = req.body.email
+        //convert data to urlencoded format
         let data = "nome="
         data = data.concat(nome,"&sobrenome=",sobrenome,"&email=",email)
+        //send request to api
         Api_res = await axios({
             method: 'post',
             url: 'http://138.68.29.250:8082/',
@@ -61,12 +51,21 @@ app.post('/', async (req,res) => {
             data
         })
         Api_res_string = Api_res.data.split("#")
-        
-        output_ids = await insertIntoDB(Api_res_string, nome, sobrenome, email)
-        console.log(output_ids)
-        check = await check_data(output_ids, nome, sobrenome, email) 
-
-        res.redirect('/')
+        // Api_res_string = "N#479#S#481#E#852#".split("#")
+        // insert names and codes to database
+        await insertIntoDB(Api_res_string, nome, sobrenome, email)
+        // select data from code tables for sum calculation
+        soma = await select_code_and_sum(Api_res_string)
+        // console.log(soma)
+        if (!soma) {
+            return res.status(504).send('Desculpe, parece que nosso banco de dados está um pouco ocupado, tente novamente mais tarde');
+        }
+        // get animal, color and Country
+        result = await get_animal_color_country(soma)
+        // console.log(result)
+        res.status(201).render('formulario', {
+            result: result[0]
+        })
     } catch (error) {
         console.error(error)
         res.redirect('/')
@@ -80,8 +79,7 @@ async function insertIntoDB(Api_res_string, nome, sobrenome, email){
         email_cod = Api_res_string[5]
         // Insert nome, nome_cod into table tbs_nome
         sqlString = `INSERT INTO tbs_nome (nome, cod)
-            OUTPUT INSERTED.id
-            VALUES (@nome,@nome_cod)`
+            VALUES (@nome,@nome_cod); SELECT @@identity as id`
         nome_cod_id = await tp.sql(sqlString)
                         .parameter('nome', TYPES.VarChar, nome)
                         .parameter('nome_cod', TYPES.BigInt, nome_cod)
@@ -89,8 +87,7 @@ async function insertIntoDB(Api_res_string, nome, sobrenome, email){
 
         // Insert sobrenome, sobrenome_cod into table tbs_sobrenome
         sqlString = `INSERT INTO tbs_sobrenome (sobrenome, cod)
-            OUTPUT INSERTED.id
-            VALUES (@sobrenome,@sobrenome_cod)`
+            VALUES (@sobrenome,@sobrenome_cod); SELECT @@identity as id`
         sobrenome_cod_id = await tp.sql(sqlString)
                             .parameter('sobrenome', TYPES.VarChar, sobrenome)
                             .parameter('sobrenome_cod', TYPES.BigInt, sobrenome_cod)
@@ -98,8 +95,7 @@ async function insertIntoDB(Api_res_string, nome, sobrenome, email){
 
         //Insert email, email_cod into table tbs_email
         sqlString = `INSERT INTO tbs_email (email, cod)
-            OUTPUT INSERTED.id
-            VALUES (@email,@email_cod)`
+            VALUES (@email,@email_cod); SELECT @@identity as id`
         email_cod_id = await tp.sql(sqlString)
                         .parameter('email', TYPES.VarChar, email)
                         .parameter('email_cod', TYPES.BigInt, email_cod)
@@ -116,36 +112,59 @@ async function insertIntoDB(Api_res_string, nome, sobrenome, email){
     }
 }
 
-async function check_data(output_ids, nome, sobrenome, email) {
-    var check = false
-    //verifica se foi realmente foram adicionados os dados no banco
-    nome_cod_id = output_ids.nome_cod_id[0].id
-    sobrenome_cod_id = output_ids.sobrenome_cod_id[0].id
-    email_cod_id = output_ids.email_cod_id[0].id
-    //Verifica table tbs_nome
-    sqlString = "SELECT nome, cod from tbs_nome WHERE id = @id"
-    queryResult = await tp.sql(sqlString)
-                    .parameter('id', TYPES.Int, nome_cod_id)
-                    .execute()
-    if ( queryResult[0].nome != null) {
-        if (queryResult[0].nome === nome) {
-            check = true
-        }
-    }else {
-        check = false
+async function select_code_and_sum(Api_res_string) {
+    nome_cod = Api_res_string[1]
+    sobrenome_cod = Api_res_string[3]
+    email_cod = Api_res_string[5]
+    let queryResult = []
+    let soma = parseInt(nome_cod) + parseInt(sobrenome_cod) + parseInt(email_cod)
+    // Get soma from tbs_cod_nome, tbs_cod_sobrenome and tbs_cod_email
+    sqlString = `SELECT n.soma as soma_nome, s.soma as soma_sobrenome, e.soma as soma_email FROM tbs_cod_nome n
+                 CROSS JOIN tbs_cod_sobrenome as s
+                 CROSS JOIN tbs_cod_email as e
+                 WHERE n.cod = @nome_cod
+                 AND s.cod = @sobrenome_cod
+                 AND e.cod = @email_cod
+                 `
+    const timer = () => {
+        return new Promise(res => {
+            setTimeout(() => {
+                res();
+            }, 100);
+        });
     }
-    return check
-     
-    //Verifica table tbs_sobrenome
-    sqlString = "SELECT sobrenome, cod from tbs_sobrenome WHERE id = @id"
+    // will loop until gets a result or timiout after 15 attempts (1,5 secs)
+    let i = 15
+    while ((queryResult == null || queryResult[0] == null ) && i > 0) {
+        queryResult = await tp.sql(sqlString)
+                .parameter('nome_cod', TYPES.BigInt, nome_cod)
+                .parameter('sobrenome_cod', TYPES.BigInt, sobrenome_cod)
+                .parameter('email_cod', TYPES.BigInt, email_cod)
+                .execute()
+        timer().then(() => {
+            i -= 1
+        })
+    }
+
+    if (queryResult != null && queryResult[0] != null) {
+        soma += queryResult[0].soma_nome + queryResult[0].soma_sobrenome + parseInt(queryResult[0].soma_email)
+    } else{
+        console.log("sum error")
+        return 0
+    }
+    return soma
+}
+
+async function get_animal_color_country(soma){
+    sqlString = `SELECT a.animal, c.cor, p.pais FROM (SELECT * FROM tbs_animais WHERE total = @total) a
+                 INNER JOIN tbs_cores c ON c.total = a.total
+                 INNER JOIN tbs_paises p ON p.total = a.total
+                 WHERE c.cor NOT IN (SELECT cor FROM tbs_cores_excluidas WHERE total = @total)
+    `
     queryResult = await tp.sql(sqlString)
-                    .parameter('id', TYPES.Int, sobrenome_cod_id)
+                    .parameter('total', TYPES.BigInt, soma)
                     .execute()
-    //Verifica table email
-    sqlString = "SELECT email, cod from tbs_email WHERE id = @id"
-    queryResult = await tp.sql(sqlString)
-                    .parameter('id', TYPES.Int, email_cod_id)
-                    .execute()
+    return queryResult
 }
 
 app.listen(process.env.PORT || 4000)
