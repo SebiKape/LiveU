@@ -1,7 +1,7 @@
 {
   "name": "s",
   "version": "1.0.0",
-  "description": "Get some information from user and returns a calculated animal, color and Country",
+  "description": "Get some information from user and returns an animal a color and a Country",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
