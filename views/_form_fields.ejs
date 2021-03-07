@@ -1,11 +1,11 @@
 <form action="/" method = "POST">
     <div class="form-row form-item">
         <label>Nome:</label>
-        <input type="text" name="nome">
+        <input type="text" name="nome" value="<%= inputs.nome %>" required>
         <label>Sobrenome:</label>
-        <input type="text" name="sobrenome">
+        <input type="text" name="sobrenome" value="<%= inputs.sobrenome %>" required>
         <label>E-mail:</label>
-        <input type="text" name="email">
+        <input type="email" name="email" value="<%= inputs.email %>" required>
     </div>
     <div class="form-row form-end">
         <button class="btn" type = "submit"> Calcular</button>

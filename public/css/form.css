@@ -2,7 +2,7 @@
     --form-label-font-size: 1.2rem;
     --form-special-label-font-size: 2rem;
     --form-input-border-color: hsl(var(--color-base-hue), 100%, 50%);
-    --form-input-background-color: hsl(var(--color-base-hue), 70%, 40%);
+    --form-input-background-color: hsl(var(--color-base-hue), 65%, 57%);
 }
 
 .form-row {
